@@ -4,10 +4,11 @@
  * elijahcobb.com
  * github.com/elijahjcobb
  */
+
 import {CuServer} from "./CuServer";
 import {CuSocket} from "./CuSocket";
 
-const server: CuServer = new CuServer();
+const server: CuServer = new CuServer({port: 8080});
 
 server.onError = async (error: Error): Promise<void> => {
 

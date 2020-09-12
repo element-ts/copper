@@ -47,6 +47,10 @@ export class CuServer {
 
 	private handleMessage(data: WS.Data, socket: CuSocket): void {
 
+		const message: Buffer | undefined = CuServer.castIncomingMessage(data);
+		if (!message) return this.handleError(new Error("Could not cast incoming message to a Buffer."));
+		if (this.onMessage) this.onMessage(message, socket).catch(this.handleError);
+
 	}
 
 	private handleError(error: Error): void {
@@ -57,13 +61,17 @@ export class CuServer {
 	}
 
 	public close(): void {
-
+		for (const socket of this.connections()) socket.close();
+		this._server.close();
 	}
 
 	public kill(socketId: string): void;
 	public kill(socket: CuSocket): void;
-	public kill(socket: string | CuSocket): void {
-
+	public kill(value: string | CuSocket): void {
+		const socket: CuSocket | undefined = (value instanceof CuSocket) ? value : this._connections.get(value);
+		if (socket === undefined) return;
+		this._connections.remove(socket.getId());
+		socket.close();
 	}
 
 	public broadcast(data: Buffer | object | string): Promise<void> {
@@ -90,6 +98,16 @@ export class CuServer {
 
 	public connections(): IterableIterator<CuSocket> {
 		return this._connections.connections();
+	}
+
+	public connectionCount(): number {
+		return this._connections.size();
+	}
+
+	private static castIncomingMessage(data: WS.Data): Buffer | undefined {
+		if (Buffer.isBuffer(data)) return data;
+		if (typeof data === "string") return Buffer.from(data);
+		return undefined;
 	}
 
 }
