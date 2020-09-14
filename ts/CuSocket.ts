@@ -49,10 +49,14 @@ export class CuSocket {
 		return this._originMessage;
 	}
 
-	public getBearerToken(): string | undefined {
-		const auth: string | undefined = this._originMessage.headers.authorization;
-		if (!auth) return undefined;
-		return auth.split(" ")[1];
+	public getProtocol(): string | undefined {
+
+		const protocol: string[] | string | undefined = this._originMessage.headers["sec-webSocket-protocol"];
+		if (!protocol) return undefined;
+		if (typeof protocol === "string") return protocol;
+
+		return protocol[0];
+
 	}
 
 	public send(data: Buffer | object | string): Promise<void> {
@@ -60,12 +64,12 @@ export class CuSocket {
 		const message: Buffer | undefined = CuSocket.castToBuffer(data);
 		if (message === undefined) throw new Error("Could not cast data to buffer.");
 
-		return new Promise(((resolve: PromResolve<void>, reject: PromReject) => {
+		return new Promise((resolve: PromResolve<void>, reject: PromReject): void => {
 			this._socket.send(data, (err: Error | undefined) => {
 				if (err) reject(err);
 				else resolve();
 			});
-		}));
+		});
 
 	}
 
@@ -75,10 +79,13 @@ export class CuSocket {
 	}
 
 	private static castToBuffer(data: Buffer | object | string): Buffer | undefined {
+
 		if (Buffer.isBuffer(data)) return data;
 		if (typeof data === "string") return Buffer.from(data);
 		if (typeof data === "object") return Buffer.from(JSON.stringify(data));
+
 		return;
+
 	}
 
 }

@@ -61,17 +61,19 @@ export class CuServer {
 	}
 
 	public close(): void {
+
 		for (const socket of this.connections()) socket.close();
 		this._server.close();
+
 	}
 
-	public kill(socketId: string): void;
-	public kill(socket: CuSocket): void;
 	public kill(value: string | CuSocket): void {
+
 		const socket: CuSocket | undefined = (value instanceof CuSocket) ? value : this._connections.get(value);
 		if (socket === undefined) return;
 		this._connections.remove(socket.getId());
 		socket.close();
+
 	}
 
 	public broadcast(data: Buffer | object | string): Promise<void> {
@@ -104,10 +106,17 @@ export class CuServer {
 		return this._connections.size();
 	}
 
+	public getSocket(id: string): CuSocket | undefined {
+		return this._connections.get(id);
+	}
+
 	private static castIncomingMessage(data: WS.Data): Buffer | undefined {
+
 		if (Buffer.isBuffer(data)) return data;
 		if (typeof data === "string") return Buffer.from(data);
+
 		return undefined;
+
 	}
 
 }

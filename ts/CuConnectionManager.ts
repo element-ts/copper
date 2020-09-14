@@ -30,15 +30,11 @@ export class CuConnectionManager {
 	}
 
 	public get(id: string): CuSocket | undefined {
-
 		return this._map.get(id);
-
 	}
 
 	public remove(id: string): void {
-
 		this._map.delete(id);
-
 	}
 
 	public connections(): IterableIterator<CuSocket> {
