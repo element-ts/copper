@@ -35,13 +35,12 @@ export class CuServer {
 
 	}
 
-	private handleConnection(connection: WS, headers: HTTP.IncomingMessage): void {
+	private handleConnection(connection: WS, incomingMessage: HTTP.IncomingMessage): void {
 
-		const socket: CuSocket = new CuSocket(connection, headers);
-		const id: string = this._connections.add(socket);
-		connection.on("close", (): void => this._connections.remove(id));
-		if (this.onConnection) this.onConnection(socket).catch(this.handleError);
+		const socket: CuSocket = this._connections.add(connection, incomingMessage);
+		connection.on("close", (): void => this._connections.remove(socket.getId()));
 		connection.on("message", (data: WS.Data): void => this.handleMessage(data, socket));
+		if (this.onConnection) this.onConnection(socket).catch(this.handleError);
 
 	}
 

@@ -9,35 +9,30 @@ import * as WS from "ws";
 import * as HTTP from "http";
 import {PromReject, PromResolve} from "@elijahjcobb/prom-type";
 
+export enum CuSocketConnectionState {
+	CONNECTING,
+	OPEN,
+	CLOSING,
+	CLOSED
+}
+
 export class CuSocket {
 
-	private _id: string | undefined;
+	private readonly _id: string;
 	private readonly _socket: WS;
 	private readonly _originMessage: HTTP.IncomingMessage;
 
-	public constructor(socket: WS, originMessage: HTTP.IncomingMessage) {
+	public constructor(socket: WS, id: string, originMessage: HTTP.IncomingMessage) {
 
 		this._socket = socket;
+		this._id = id;
 		this._originMessage = originMessage;
-
-	}
-
-	public setId(value: string): void {
-
-		this._id = value;
 
 	}
 
 	public getId(): string {
 
-		if (this._id === undefined) throw new Error("CuSocket does not have an id.");
 		return this._id;
-
-	}
-
-	public hasId(): boolean {
-
-		return this._id !== undefined;
 
 	}
 
@@ -59,8 +54,21 @@ export class CuSocket {
 
 	}
 
+	public getConnectionState(): CuSocketConnectionState {
+
+		return this._socket.OPEN;
+
+	}
+
+	public isOpen(): boolean {
+
+		return this.getConnectionState() === CuSocketConnectionState.OPEN;
+
+	}
+
 	public send(data: Buffer | object | string): Promise<void> {
 
+		if (!this.isOpen()) throw new Error("Socket is not open. Please wait until socket is open.");
 		const message: Buffer | undefined = CuSocket.castToBuffer(data);
 		if (message === undefined) throw new Error("Could not cast data to buffer.");
 
@@ -75,7 +83,6 @@ export class CuSocket {
 
 	public close(): void {
 		this._socket.close();
-		this._id = undefined;
 	}
 
 	private static castToBuffer(data: Buffer | object | string): Buffer | undefined {

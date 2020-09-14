@@ -6,6 +6,8 @@
  */
 
 import * as Crypto from "crypto";
+import * as WS from "ws";
+import * as HTTP from "http";
 import {CuSocket} from "./CuSocket";
 
 export class CuConnectionManager {
@@ -18,14 +20,14 @@ export class CuConnectionManager {
 
 	}
 
-	public add(socket: CuSocket): string {
+	public add(socket: WS, incomingMessage: HTTP.IncomingMessage): CuSocket {
 
 		let id: string = Crypto.randomBytes(16).toString("hex");
 		while (this._map.has(id)) id = Crypto.randomBytes(16).toString("hex");
-		this._map.set(id, socket);
-		socket.setId(id);
+		const newSocket: CuSocket = new CuSocket(socket, id, incomingMessage);
+		this._map.set(id, newSocket);
 
-		return id;
+		return newSocket;
 
 	}
 
