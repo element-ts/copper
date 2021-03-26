@@ -47,34 +47,34 @@ class DataStore {
 	public static init(path: string): DataStore { return new DataStore(); }
 }
 
-class CopperServer {
+class Copper {
 
 	private constructor() {}
 
-	public server(port: number): CopperServer {
+	public server(port: number): Copper {
 		return this;
 	}
 
-	public database(host: string, port: number, database: string): CopperServer {
+	public database(host: string, port: number, database: string): Copper {
 		return this;
 	}
 
-	public enableAnonymousSession(): CopperServer { return this; }
+	public enableAnonymousSession(): Copper { return this; }
 
-	public defaultAuth(auth: Auth): CopperServer { return this; }
+	public defaultAuth(auth: Auth): Copper { return this; }
 
-	public collection(collection: Collection): CopperServer {return this; }
+	public collection(collection: Collection): Copper {return this; }
 
-	public cloudFunction(cloudFunction: CloudFunction<any, any>): CopperServer { return this; }
+	public cloudFunction(cloudFunction: CloudFunction<any, any>): Copper { return this; }
 
-	public dataStore(dataStore: DataStore): CopperServer { return this; }
+	public dataStore(dataStore: DataStore): Copper { return this; }
 
 	public start(): void {}
 
-	public groups(...groups: Group[]): CopperServer { return this; }
+	public groups(...groups: Group[]): Copper { return this; }
 
-	public static init(port: number): CopperServer {
-		return new CopperServer();
+	public static init(port: number): Copper {
+		return new Copper();
 	}
 }
 
@@ -170,7 +170,7 @@ class Group {
 	public static init(name: string): Group { return new Group(); }
 }
 
-CopperServer
+Copper
 	.init(3000)
 	.database("localhost", 27017, "CopperTest")
 	.enableAnonymousSession()
@@ -278,7 +278,7 @@ CopperServer
 
 export class Object {
 
-	public constructor(collection: string, owner: User) {
+	public constructor(collection: string, owner?: User) {
 
 	}
 
@@ -295,24 +295,15 @@ export class Object {
 
 }
 
-class Copper {
+class CopperAPI {
 
 	private constructor() {
 	}
 
-	public auth(user: User): void {}
+	public setAuth(user: User): void {}
 
-	public object(collection: string): Object {
-		throw "";
-	}
-
-	public async signUp(email: string, password: string): Promise<User> { return new User(); }
-	public async signIn(email: string, password: string): Promise<User> { return new User(); }
-	public async token(token: string): Promise<User> { return new User(); }
-	public async anonymous(): Promise<AnonymousUser> { return new AnonymousUser(); }
-
-	public static async init(host: string, port: number): Promise<Copper> {
-		return new Copper();
+	public static async init(host: string, port: number): Promise<CopperAPI> {
+		return new CopperAPI();
 	}
 }
 
@@ -351,7 +342,7 @@ export class User {
 
 export class AnonymousUser extends User {
 
-	public constructor() {
+	protected constructor() {
 		super();
 	}
 
@@ -363,9 +354,10 @@ export class AnonymousUser extends User {
 
 }
 
-const api = await Copper.init("localhost", 3000);
-const u = await api.signIn("efwewf", "wef");
+const api = await CopperAPI.init("localhost", 3000);
+const a = await AnonymousUser.anonymous();
+api.setAuth(a);
 
 
-const book = api.object("Book");
+const book = new Object("book", a);
 book.set();
