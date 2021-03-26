@@ -7,7 +7,7 @@
 
 import * as express from "express";
 import * as mongodb from "mongodb";
-import {OStandardType, OType} from "@element-ts/oxygen";
+import {OObjectTypeDefinition, OStandardType, OType} from "@element-ts/oxygen";
 
 const app = express();
 
@@ -23,14 +23,6 @@ app.get("/*", async (req, res) => {
 
 app.listen(3000);
 
-class CuType {
-	private value: number;
-	public static readonly string: CuType = new CuType(0);
-	public static readonly number: CuType = new CuType(1);
-	public static readonly boolean: CuType = new CuType(2);
-	private constructor(value: number) { this.value = value; }
-}
-
 interface Meta {
 	id: string;
 	updatedAt: number;
@@ -42,24 +34,18 @@ interface Req {
 
 }
 
-class Collection<T = any> {
+class DataStore {
 	private constructor() {}
-
-	public string(name: string, required: boolean = false, defaultValue: string = ""): Collection<T> { return this; }
-	public number(name: string, required: boolean = false, defaultValue: number = 0): Collection<T> { return this; }
-	public boolean(name: string, required: boolean = false, defaultValue: boolean = false): Collection<T> { return this; }
-	public list(name: string, type: CuType): Collection<T> { return this; }
-
-	public auth(auth: Auth): Collection<T> { return this; }
-
-	public beforeCreate(handler: (doc: T, req: Req) => void): Collection<T> { return this; }
-	public afterCreate(handler: (doc: T, meta: Meta, req: Req) => void): Collection<T> { return this; }
-	public beforeUpdate(handler: (doc: T, meta: Meta, req: Req) => void): Collection<T> { return this; }
-	public afterUpdate(handler: (doc: T, meta: Meta, req: Req) => void): Collection<T> { return this; }
-	public beforeDelete(handler: (doc: T, meta: Meta, req: Req) => void): Collection<T> { return this; }
-	public afterDelete(handler: (doc: T, meta: Meta, req: Req) => void): Collection<T> { return this; }
-
-	public static init<T = any>(value: string): Collection<T> {return new Collection<T>(); }
+	public limit(bytes: number): DataStore { return this; }
+	public root(path: string): DataStore { return this; }
+	public auth(auth: Auth): DataStore { return this; }
+	public beforeSave(): DataStore { return this; }
+	public afterSave(): DataStore { return this; }
+	public beforeFetch(): DataStore { return this; }
+	public afterFetch(): DataStore { return this; }
+	public beforeDelete(): DataStore { return this; }
+	public afterDelete(): DataStore { return this; }
+	public static init(): DataStore { return new DataStore(); }
 }
 
 class Copper {
@@ -77,6 +63,8 @@ class Copper {
 	public defaultAuth(auth: Auth): Copper { return this; }
 
 	public collection(collection: Collection): Copper {return this; }
+
+	public dataStore(dataStore: DataStore): Copper { return this; }
 
 	public start(): void {}
 
@@ -140,6 +128,28 @@ class Auth {
 	public static init(): Auth { return new Auth(); }
 }
 
+class Collection<T = any> {
+	private constructor() {}
+
+	public property<P>(name: string, type: OType<P>, required: boolean = false, defaultValue?: P): Collection<T> { return this; }
+	public string(name: string, required: boolean = false, defaultValue: string = ""): Collection<T> { return this; }
+	public number(name: string, required: boolean = false, defaultValue: number = 0): Collection<T> { return this; }
+	public boolean(name: string, required: boolean = false, defaultValue: boolean = false): Collection<T> { return this; }
+	public list<P>(name: string, ...types: OType<P>[]): Collection<T> { return this; }
+	public object<P>(name: string, type: OObjectTypeDefinition<P>): Collection<T> { return this; }
+
+	public auth(auth: Auth): Collection<T> { return this; }
+
+	public beforeCreate(handler: (doc: T, req: Req) => void): Collection<T> { return this; }
+	public afterCreate(handler: (doc: T, meta: Meta, req: Req) => void): Collection<T> { return this; }
+	public beforeUpdate(handler: (doc: T, meta: Meta, req: Req) => void): Collection<T> { return this; }
+	public afterUpdate(handler: (doc: T, meta: Meta, req: Req) => void): Collection<T> { return this; }
+	public beforeDelete(handler: (doc: T, meta: Meta, req: Req) => void): Collection<T> { return this; }
+	public afterDelete(handler: (doc: T, meta: Meta, req: Req) => void): Collection<T> { return this; }
+
+	public static init<T = any>(value: string): Collection<T> {return new Collection<T>(); }
+}
+
 Copper
 	.init()
 	.server(3000)
@@ -149,6 +159,23 @@ Copper
 			.init()
 			.admin()
 	)
+	.dataStore(
+		DataStore
+			.init()
+			.auth(
+				Auth
+					.init()
+					.admin()
+			)
+			.limit(10_000_000)
+			.root("/tmp")
+			.beforeSave()
+			.afterSave()
+			.beforeFetch()
+			.afterFetch()
+			.beforeDelete()
+			.afterDelete()
+	)
 	.collection(
 		Collection
 			.init<string>("User")
@@ -157,7 +184,11 @@ Copper
 			.string("email", true)
 			.number("age")
 			.boolean("isAdmin", false, false)
-			.list("favoriteBooks", CuType.string)
+			.list("favoriteBooks", OStandardType.string)
+			.object("options", {
+				darkMode: OStandardType.boolean,
+				timeout: OStandardType.number
+			})
 			.beforeCreate((doc, req) => {
 				console.log("Will be created!");
 			})
